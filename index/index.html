@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER VR 360 智慧校園虛擬導覽系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pannellum 360 Panorama Viewer -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+    <!-- Tone.js Web Audio Synthesizer -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+TC:wght@300;500;700;900&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #020617;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #panorama {
+            width: 100vw;
+            height: 100vh;
+            filter: contrast(1.05) saturate(1.1);
+        }
+
+        /* Futuristic Frosted Glassmorphism UI */
+        .cyber-glass {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.78) 0%, rgba(2, 6, 23, 0.90) 100%);
+            backdrop-filter: blur(20px) saturate(190%);
+            -webkit-backdrop-filter: blur(20px) saturate(190%);
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            box-shadow: 0 10px 35px -5px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+        }
+
+        .cyber-glass-interactive {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cyber-glass-interactive:hover {
+            border-color: rgba(56, 189, 248, 0.7);
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Floating IG Live Mascot Particle Dynamics */
+        .flying-mascot {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            will-change: transform, opacity;
+            animation: mascotFlyPath var(--duration, 2.5s) cubic-bezier(0.2, 0.6, 0.35, 1) forwards;
+        }
+
+        @keyframes mascotFlyPath {
+            0% {
+                transform: translate(0, 0) scale(0.35) rotate(0deg);
+                opacity: 0;
+            }
+            15% {
+                transform: translate(var(--sway1, -25px), -65px) scale(1.15) rotate(var(--rot1, -15deg));
+                opacity: 1;
+            }
+            50% {
+                transform: translate(var(--sway2, 30px), -210px) scale(1.4) rotate(var(--rot2, 18deg));
+                opacity: 0.95;
+            }
+            100% {
+                transform: translate(var(--sway3, -20px), -440px) scale(1.85) rotate(var(--rot3, -10deg));
+                opacity: 0;
+            }
+        }
+
+        /* Custom Pannellum Hotspot Styling */
+        .pnlm-hotspot-base {
+            background: linear-gradient(135deg, #06b6d4, #0284c7) !important;
+            border: 2px solid #ffffff !important;
+            border-radius: 9999px !important;
+            box-shadow: 0 0 22px #06b6d4, inset 0 0 8px rgba(255,255,255,0.8) !important;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        }
+        .pnlm-hotspot-base:hover {
+            transform: scale(1.35) !important;
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            box-shadow: 0 0 28px #10b981 !important;
+        }
+
+        /* Sci-Fi Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: rgba(30, 41, 59, 0.85);
+            height: 5px;
+            border-radius: 999px;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 12px #38bdf8;
+            cursor: pointer;
+            border: 2px solid #ffffff;
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="text-slate-100">
+
+    <!-- 360 Panorama Viewport -->
+    <div id="panorama"></div>
+
+    <!-- Top Navigation HUD Bar -->
+    <header class="fixed top-3 left-3 right-3 flex flex-wrap justify-between items-center gap-2 z-30 pointer-events-none">
+        <!-- Logo & Scene Indicator -->
+        <div class="cyber-glass px-4 py-2 rounded-2xl flex items-center space-x-3 pointer-events-auto shadow-2xl">
+            <div class="relative flex h-3.5 w-3.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-cyan-400 shadow-[0_0_10px_#22d3ee]"></span>
+            </div>
+            <div>
+                <div class="flex items-center space-x-1.5">
+                    <span class="font-orbitron font-extrabold text-xs md:text-sm tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-200">CYBER CAMPUS</span>
+                    <span class="text-[9px] bg-cyan-950/80 text-cyan-300 font-mono px-1.5 py-0.5 rounded border border-cyan-500/30">VR 360° LIVE</span>
+                </div>
+                <div class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                    <span id="current-scene-name">載入中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access Actions -->
+        <div class="flex items-center space-x-2 pointer-events-auto">
+            <!-- Multimedia Guides Trigger Group -->
+            <div class="cyber-glass p-1 rounded-2xl flex items-center space-x-1">
+                <button onclick="openModal('info')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-cyan-500/20 text-slate-200 hover:text-cyan-300 transition flex items-center gap-1.5">
+                    <i class="fa-regular fa-image text-cyan-400"></i> 圖文
+                </button>
+                <button onclick="openModal('video')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-purple-500/20 text-slate-200 hover:text-purple-300 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-play text-purple-400"></i> 影片
+                </button>
+                <button onclick="openModal('live')" class="px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-rose-500/20 text-slate-200 hover:text-rose-300 transition flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span> 直播
+                </button>
+            </div>
+
+            <!-- Ambient Campus BGM Synthesizer Control -->
+            <div class="cyber-glass px-2.5 py-1.5 rounded-2xl flex items-center space-x-2">
+                <button id="bgm-toggle" title="播放/暫停校園環境BGM" class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 flex items-center justify-center transition">
+                    <i class="fa-solid fa-volume-xmark" id="bgm-icon"></i>
+                </button>
+                <input type="range" id="bgm-vol" min="0" max="1" step="0.05" value="0.65" class="w-16 hidden lg:block" title="調整BGM音量">
+            </div>
+        </div>
+    </header>
+
+    <!-- Left HUD: Camera Gimbal & Optics Control -->
+    <aside class="fixed top-20 left-3 z-20 flex flex-col space-y-3 pointer-events-auto">
+        <!-- Manual View Direction D-Pad -->
+        <div class="cyber-glass p-3 rounded-2xl w-44 flex flex-col items-center">
+            <div class="w-full flex justify-between items-center mb-2 px-1">
+                <span class="text-[10px] font-bold tracking-wider text-cyan-400 uppercase flex items-center gap-1">
+                    <i class="fa-solid fa-gamepad"></i> 視角操控鍵
+                </span>
+                <span id="view-deg-info" class="text-[9px] font-mono text-slate-400">0°, 0°</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 my-1">
+                <div></div>
+                <button onclick="adjustView(12, 0)" class="w-10 h-8 rounded-xl bg-slate-800/80 hover:bg-cyan-500/30 border border-slate-700 hover:border-cyan-400 text-slate-200 flex items-center justify-center active:scale-90 transition" title="向上看">
+                    <i class="fa-solid fa-chevron-up text-xs"></i>
+                </button>
+                <div></div>
+                <button onclick="adjustView(0, -18)" class="w-10 h-8 rounded-xl bg-slate-800/80 hover:bg-cyan-500/30 border border-slate-700 hover:border-cyan-400 text-slate-200 flex items-center justify-center active:scale-90 transition" title="向左轉">
+                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                </button>
+                <button onclick="resetView()" class="w-10 h-8 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 border border-cyan-400/50 text-cyan-300 flex items-center justify-center active:scale-90 transition text-[10px] font-bold" title="校準歸零">
+                    歸零
+                </button>
+                <button onclick="adjustView(0, 18)" class="w-10 h-8 rounded-xl bg-slate-800/80 hover:bg-cyan-500/30 border border-slate-700 hover:border-cyan-400 text-slate-200 flex items-center justify-center active:scale-90 transition" title="向右轉">
+                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                </button>
+                <div></div>
+                <button onclick="adjustView(-12, 0)" class="w-10 h-8 rounded-xl bg-slate-800/80 hover:bg-cyan-500/30 border border-slate-700 hover:border-cyan-400 text-slate-200 flex items-center justify-center active:scale-90 transition" title="向下看">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </button>
+                <div></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 w-full mt-2 pt-2 border-t border-slate-800">
+                <button onclick="adjustFov(-12)" class="py-1 rounded-xl bg-slate-800/80 hover:bg-emerald-500/30 border border-slate-700 hover:border-emerald-400 text-[11px] flex items-center justify-center gap-1 transition active:scale-95 text-emerald-300">
+                    <i class="fa-solid fa-magnifying-glass-plus"></i> 拉近
+                </button>
+                <button onclick="adjustFov(12)" class="py-1 rounded-xl bg-slate-800/80 hover:bg-emerald-500/30 border border-slate-700 hover:border-emerald-400 text-[11px] flex items-center justify-center gap-1 transition active:scale-95 text-emerald-300">
+                    <i class="fa-solid fa-magnifying-glass-minus"></i> 拉遠
+                </button>
+            </div>
+        </div>
+
+        <!-- Auto-Tour & Optics Sliders -->
+        <div class="cyber-glass p-3 rounded-2xl w-44 text-xs space-y-2.5">
+            <div class="flex items-center justify-between">
+                <span class="font-bold text-cyan-400 flex items-center gap-1.5 text-[11px]">
+                    <i class="fa-solid fa-compass-drafting"></i> 自動運鏡導覽
+                </span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="auto-rotate-switch" class="sr-only peer" checked>
+                    <div class="w-7 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-cyan-500"></div>
+                </label>
+            </div>
+
+            <div class="space-y-1">
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-slate-300">運鏡速度</span>
+                    <span id="speed-indicator" class="font-mono text-cyan-300 font-bold">2.5 °/s</span>
+                </div>
+                <input type="range" id="speed-slider" min="-12" max="12" step="0.5" value="2.5" class="w-full">
+            </div>
+
+            <div class="space-y-1">
+                <div class="flex justify-between text-[10px]">
+                    <span class="text-slate-300">光學焦距 (FOV)</span>
+                    <span id="fov-indicator" class="font-mono text-emerald-300 font-bold">100°</span>
+                </div>
+                <input type="range" id="fov-slider" min="45" max="120" step="1" value="100" class="w-full">
+            </div>
+        </div>
+    </aside>
+
+    <!-- Right HUD: Radar Campus Mini-Map -->
+    <aside class="fixed top-20 right-3 z-20 pointer-events-auto flex flex-col items-end space-y-2">
+        <div class="cyber-glass p-2.5 rounded-2xl w-52 sm:w-60 transition-all duration-300">
+            <div class="flex justify-between items-center mb-1.5 px-1">
+                <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                    <i class="fa-solid fa-satellite-dish animate-pulse"></i> 校園雷達小地圖
+                </span>
+                <button id="toggle-minimap-btn" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 flex items-center justify-center">
+                    <i class="fa-solid fa-minus" id="minimap-toggle-icon"></i>
+                </button>
+            </div>
+
+            <div id="minimap-body" class="relative rounded-xl overflow-hidden border border-cyan-500/30 aspect-[16/10] bg-slate-950/95">
+                <svg class="w-full h-full" viewBox="0 0 240 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <pattern id="radar-grid" width="18" height="18" patternUnits="userSpaceOnUse">
+                        <path d="M 18 0 L 0 0 0 18" fill="none" stroke="rgba(56, 189, 248, 0.08)" stroke-width="1"/>
+                    </pattern>
+                    <rect width="240" height="150" fill="url(#radar-grid)"/>
+
+                    <path d="M36 110 L92 75 L155 75 L198 42" stroke="rgba(56, 189, 248, 0.3)" stroke-width="7" stroke-linecap="round"/>
+                    <path d="M92 75 L128 118" stroke="rgba(56, 189, 248, 0.3)" stroke-width="6" stroke-linecap="round"/>
+
+                    <rect x="18" y="90" width="42" height="34" rx="4" fill="rgba(30, 41, 59, 0.85)" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.2"/>
+                    <rect x="70" y="44" width="50" height="36" rx="4" fill="rgba(30, 41, 59, 0.85)" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.2"/>
+                    <rect x="132" y="48" width="46" height="34" rx="4" fill="rgba(30, 41, 59, 0.85)" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.2"/>
+                    <rect x="174" y="18" width="48" height="34" rx="4" fill="rgba(30, 41, 59, 0.85)" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.2"/>
+                    <rect x="105" y="96" width="55" height="34" rx="4" fill="rgba(30, 41, 59, 0.85)" stroke="rgba(56, 189, 248, 0.5)" stroke-width="1.2"/>
+                </svg>
+
+                <div class="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-cyan-500/5 to-cyan-400/15 animate-pulse"></div>
+
+                <!-- 5 Campus Radar Nodes -->
+                <button onclick="switchPanoramaScene('scene1')" id="radar-scene1" style="top: 24%; left: 83%;" title="1. 校園超市便利店" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-white shadow-[0_0_12px_#22d3ee] hover:scale-125 transition"></button>
+                <button onclick="switchPanoramaScene('scene2')" id="radar-scene2" style="top: 78%; left: 54%;" title="2. 視傳系展示大廳" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
+                <button onclick="switchPanoramaScene('scene3')" id="radar-scene3" style="top: 44%; left: 64%;" title="3. D-202 演講廳川堂" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
+                <button onclick="switchPanoramaScene('scene4')" id="radar-scene4" style="top: 42%; left: 39%;" title="4. 教學大樓大廣場" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
+                <button onclick="switchPanoramaScene('scene5')" id="radar-scene5" style="top: 72%; left: 17%;" title="5. 弧形玻璃天幕迴廊" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
+            </div>
+            <div class="mt-1 flex justify-between items-center text-[10px] text-slate-400 px-1">
+                <span>雷達點選瞬移</span>
+                <span id="radar-active-tag" class="text-cyan-300 font-bold">1. 校園超市</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Bottom Right: Floating Mascot Interactive Button (Uses images/toy.jpg) -->
+    <div class="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-40 pointer-events-auto flex flex-col items-center">
+        <!-- Live Combo Hit Counter -->
+        <div id="mascot-combo" class="mb-2 px-3 py-1 rounded-full cyber-glass border-lime-400/60 text-lime-300 font-black text-xs shadow-[0_0_20px_rgba(163,230,53,0.5)] transform scale-75 opacity-0 transition-all duration-200 flex items-center space-x-1">
+            <span>🚀 應援連擊</span>
+            <span id="mascot-combo-count" class="text-sm font-orbitron text-white">x0</span>
+        </div>
+
+        <!-- Floating Mascot Button Trigger -->
+        <button id="mascot-fly-btn" class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full cyber-glass cyber-glass-interactive p-1 border-2 border-lime-400 shadow-[0_0_25px_rgba(163,230,53,0.4)] active:scale-90 transition-transform group flex items-center justify-center">
+            <span class="absolute -inset-1 rounded-full border border-lime-400/40 animate-ping pointer-events-none"></span>
+            
+            <img id="mascot-button-icon" src="images/toy.jpg" onerror="this.src=defaultMascotDataUri" alt="吉祥物小圖案" class="w-12 h-12 sm:w-14 sm:h-14 object-contain rounded-full drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)] group-hover:scale-110 group-hover:-rotate-6 transition-transform"/>
+            
+            <span class="absolute -bottom-2 bg-gradient-to-r from-lime-500 to-emerald-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-md">
+                點我飛翔
+            </span>
+        </button>
+    </div>
+
+    <!-- Bottom Center: 5 Campus Scenes Switcher Dock -->
+    <nav class="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-[96vw]">
+        <div class="cyber-glass p-2 rounded-2xl flex items-center space-x-2 overflow-x-auto no-scrollbar shadow-2xl">
+            <button onclick="switchPanoramaScene('scene1')" id="tab-scene1" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-cyan-500/30 border border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.35)] transition flex items-center space-x-2">
+                <span class="w-5 h-5 rounded-lg bg-cyan-400 text-slate-950 flex items-center justify-center font-black">1</span>
+                <span>校園超市便利店</span>
+            </button>
+            <button onclick="switchPanoramaScene('scene2')" id="tab-scene2" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
+                <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">2</span>
+                <span>視傳系展示大廳</span>
+            </button>
+            <button onclick="switchPanoramaScene('scene3')" id="tab-scene3" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
+                <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">3</span>
+                <span>D-202演講廳川堂</span>
+            </button>
+            <button onclick="switchPanoramaScene('scene4')" id="tab-scene4" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
+                <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">4</span>
+                <span>教學大樓廣場</span>
+            </button>
+            <button onclick="switchPanoramaScene('scene5')" id="tab-scene5" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
+                <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">5</span>
+                <span>天幕紅磚迴廊</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Universal Cyber Modal (Info, Video, Live) -->
+    <div id="cyber-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+        <div class="cyber-glass rounded-3xl max-w-2xl w-full p-5 sm:p-6 border border-cyan-400/40 shadow-2xl relative">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <h2 id="modal-heading" class="text-base sm:text-lg font-extrabold text-cyan-300 flex items-center gap-2">
+                    <i class="fa-solid fa-cube"></i> 多媒體視窗
+                </h2>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-rose-500/30 text-slate-300 hover:text-rose-300 flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="py-4 text-xs sm:text-sm text-slate-200 max-h-[75vh] overflow-y-auto">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Fallback Vector Mascot
+        const defaultMascotDataUri = `data:image/svg+xml;utf8,` + encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 200">
+            <path d="M 52 95 C 25 70, 15 95, 38 118" fill="#a3cc39" stroke="#184e87" stroke-width="8" stroke-linecap="round"/>
+            <path d="M 168 108 C 195 92, 202 115, 172 128" fill="#a3cc39" stroke="#184e87" stroke-width="8" stroke-linecap="round"/>
+            <ellipse cx="135" cy="172" rx="18" ry="12" fill="#a3cc39" stroke="#184e87" stroke-width="8"/>
+            <path d="M 95 25 C 145 20, 180 65, 170 125 C 162 165, 130 175, 92 168 C 52 162, 42 135, 48 92 C 53 50, 65 28, 95 25 Z" fill="#a3cc39" stroke="#184e87" stroke-width="8"/>
+            <ellipse cx="56" cy="146" rx="14" ry="20" fill="#a3cc39" stroke="#184e87" stroke-width="8"/>
+            <circle cx="62" cy="96" r="14" fill="#d9e046"/><circle cx="152" cy="105" r="15" fill="#d9e046"/>
+            <circle cx="88" cy="48" r="8" fill="#184e87"/><circle cx="148" cy="60" r="8" fill="#184e87"/>
+            <path d="M 85 68 C 105 65, 135 72, 138 82 C 140 90, 132 118, 122 125 C 108 132, 82 124, 78 110 Z" fill="#184e87"/>
+            <path d="M 82 70 C 102 66, 132 72, 138 82 C 135 90, 100 84, 82 78 Z" fill="#a3cc39" stroke="#184e87" stroke-width="5"/>
+        </svg>`);
+
+        let activeMascotImg = "images/toy.jpg";
+
+        // Check if images/toy.jpg exists, otherwise fallback
+        const testImg = new Image();
+        testImg.src = activeMascotImg;
+        testImg.onerror = () => {
+            activeMascotImg = defaultMascotDataUri;
+            document.getElementById('mascot-button-icon').src = activeMascotImg;
+        };
+
+        // 2. Procedural Backup Generator (Used only if images/sceneX.jpg is not found)
+        function generateBackupPanorama(color1, color2, label) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 2048;
+            canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+            grad.addColorStop(0, color1);
+            grad.addColorStop(1, color2);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 2048, 1024);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 64px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, 1024, 512);
+            return canvas.toDataURL('image/jpeg', 0.85);
+        }
+
+        // 3. Exact Mapping to Your Saved Files
+        const campusScenes = {
+            scene1: {
+                title: "1. 校園超市便利店 (DAIRY)",
+                imgPath: "images/scene1.jpg",
+                backupData: generateBackupPanorama('#0f172a', '#78350f', '1. 校園超市便利店'),
+                pitch: -3, yaw: -35,
+                desc: "現代化的校園便利超市，設有亮眼的 DAIRY 鮮乳冷藏專區與各類零食生鮮，為全體師生提供最即時的日常能量補給。",
+                hotSpots: [
+                    { pitch: -4, yaw: 135, text: "前往：2. 視傳系展示大廳", sceneId: "scene2" },
+                    { pitch: 4, yaw: -45, text: "📸 檢視【校園超商熱門優惠】", action: "info" }
+                ]
+            },
+            scene2: {
+                title: "2. 視覺傳達設計系展示大廳",
+                imgPath: "images/scene2.jpg",
+                backupData: generateBackupPanorama('#1e1b4b', '#eab308', '2. 視覺傳達設計系展示大廳'),
+                pitch: 0, yaw: 0,
+                desc: "具備鮮明亮黃色放射格柵天花板設計，正中央為「視覺傳達設計系」大型作品展示櫥窗，右側設有電梯廳與展覽走廊。",
+                hotSpots: [
+                    { pitch: -2, yaw: 55, text: "前往：3. D-202 演講廳川堂", sceneId: "scene3" },
+                    { pitch: -2, yaw: -90, text: "前往：1. 校園超市便利店", sceneId: "scene1" },
+                    { pitch: 2, yaw: -10, text: "🎨 欣賞【視傳系櫥窗精選設計】", action: "info" }
+                ]
+            },
+            scene3: {
+                title: "3. D-202 演講廳川堂走廊",
+                imgPath: "images/scene3.jpg",
+                backupData: generateBackupPanorama('#334155', '#cbd5e1', '3. D-202 演講廳川堂走廊'),
+                pitch: 0, yaw: -30,
+                desc: "流線型弧形鋁企口天花板川堂，設有 D-202 演講廳木門與資訊電視看板，向外通往大廣場，向內貫通系所專業教學空間。",
+                hotSpots: [
+                    { pitch: -2, yaw: 120, text: "走出戶外：4. 教學大樓廣場", sceneId: "scene4" },
+                    { pitch: -3, yaw: 22, text: "前往：2. 視傳系展示大廳", sceneId: "scene2" },
+                    { pitch: 2, yaw: -38, text: "🎬 觀看【演講廳精彩實況影片】", action: "video" }
+                ]
+            },
+            scene4: {
+                title: "4. 教學大樓紅白磚大廣場",
+                imgPath: "images/scene4.jpg",
+                backupData: generateBackupPanorama('#0369a1', '#b91c1c', '4. 教學大樓紅白磚大廣場'),
+                pitch: 6, yaw: 12,
+                desc: "壯闊的圓弧幾何造型教學大樓與紅白相間的地面拼花地磚，廣場連通行政中心、禮堂與主幹道，是校園活動的熱門地標。",
+                hotSpots: [
+                    { pitch: 0, yaw: 18, text: "進入：3. D-202演講廳川堂", sceneId: "scene3" },
+                    { pitch: -2, yaw: -110, text: "前往：5. 天幕紅磚迴廊", sceneId: "scene5" },
+                    { pitch: 10, yaw: -15, text: "🔴 觀看【廣場即時LIVE影像】", action: "live" }
+                ]
+            },
+            scene5: {
+                title: "5. 弧形玻璃天幕紅磚迴廊",
+                imgPath: "images/scene5.jpg",
+                backupData: generateBackupPanorama('#1e3a8a', '#991b1b', '5. 弧形玻璃天幕紅磚迴廊'),
+                pitch: 2, yaw: 0,
+                desc: "採光極佳的挑高弧形玻璃天幕與典雅紅磚柱，遠眺校園廣場與綠意盎然的樹林，是師生課間漫步休憩的絕佳場所。",
+                hotSpots: [
+                    { pitch: -3, yaw: -45, text: "前往：4. 教學大樓廣場", sceneId: "scene4" },
+                    { pitch: 15, yaw: 15, text: "📸 查看【天幕迴廊建築特色】", action: "info" }
+                ]
+            }
+        };
+
+        let currentActiveKey = 'scene1';
+        let pannellumViewer = null;
+        let tapComboCount = 0;
+        let tapComboTimeout = null;
+
+        // Resolve Image with Auto-fallback check
+        function resolveImage(sceneKey) {
+            return new Promise((resolve) => {
+                const s = campusScenes[sceneKey];
+                const img = new Image();
+                img.onload = () => resolve(s.imgPath);
+                img.onerror = () => resolve(s.backupData);
+                img.src = s.imgPath;
+            });
+        }
+
+        async function switchPanoramaScene(sceneKey) {
+            currentActiveKey = sceneKey;
+            const target = campusScenes[sceneKey];
+
+            document.getElementById('current-scene-name').innerText = target.title;
+            document.getElementById('radar-active-tag').innerText = target.title.split(' ')[0] + ' ' + target.title.split(' ')[1];
+
+            document.querySelectorAll('.scene-nav-btn').forEach(btn => {
+                btn.className = "scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2";
+            });
+            const activeNavBtn = document.getElementById(`tab-${sceneKey}`);
+            if (activeNavBtn) {
+                activeNavBtn.className = "scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-cyan-500/30 border border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.35)] transition flex items-center space-x-2";
+            }
+
+            document.querySelectorAll('.radar-node').forEach(pin => {
+                pin.className = "radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition";
+            });
+            const activePin = document.getElementById(`radar-${sceneKey}`);
+            if (activePin) {
+                activePin.className = "radar-node absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-white shadow-[0_0_12px_#22d3ee] scale-125 transition";
+            }
+
+            const finalImageSrc = await resolveImage(sceneKey);
+
+            if (pannellumViewer) {
+                try { pannellumViewer.destroy(); } catch (e) {}
+            }
+
+            const currentFov = parseFloat(document.getElementById('fov-slider').value) || 100;
+            const autoRotateOn = document.getElementById('auto-rotate-switch').checked;
+            const rotateSpeed = parseFloat(document.getElementById('speed-slider').value) || 2.5;
+
+            const hotspotsFormatted = target.hotSpots.map(h => ({
+                pitch: h.pitch,
+                yaw: h.yaw,
+                type: "info",
+                text: h.text,
+                clickHandlerFunc: () => {
+                    if (h.sceneId) switchPanoramaScene(h.sceneId);
+                    else if (h.action) openModal(h.action);
+                }
+            }));
+
+            pannellumViewer = pannellum.viewer('panorama', {
+                type: "equirectangular",
+                panorama: finalImageSrc,
+                autoLoad: true,
+                pitch: target.pitch,
+                yaw: target.yaw,
+                hfov: currentFov,
+                minHfov: 40,
+                maxHfov: 120,
+                autoRotate: autoRotateOn ? rotateSpeed : 0,
+                showControls: false,
+                compass: false,
+                hotSpots: hotspotsFormatted
+            });
+
+            pannellumViewer.on('mouseup', refreshCoordinates);
+            pannellumViewer.on('touchend', refreshCoordinates);
+        }
+
+        function refreshCoordinates() {
+            if (!pannellumViewer) return;
+            const p = Math.round(pannellumViewer.getPitch());
+            const y = Math.round(pannellumViewer.getYaw());
+            document.getElementById('view-deg-info').innerText = `${p}°, ${y}°`;
+        }
+
+        function adjustView(dpitch, dyaw) {
+            if (!pannellumViewer) return;
+            pannellumViewer.setPitch(pannellumViewer.getPitch() + dpitch);
+            pannellumViewer.setYaw(pannellumViewer.getYaw() + dyaw);
+            setTimeout(refreshCoordinates, 250);
+        }
+
+        function resetView() {
+            if (!pannellumViewer) return;
+            const s = campusScenes[currentActiveKey];
+            pannellumViewer.setPitch(s.pitch);
+            pannellumViewer.setYaw(s.yaw);
+            pannellumViewer.setHfov(100);
+            document.getElementById('fov-slider').value = 100;
+            document.getElementById('fov-indicator').innerText = '100°';
+            setTimeout(refreshCoordinates, 250);
+        }
+
+        function adjustFov(delta) {
+            if (!pannellumViewer) return;
+            const newFov = Math.max(45, Math.min(120, pannellumViewer.getHfov() + delta));
+            pannellumViewer.setHfov(newFov);
+            document.getElementById('fov-slider').value = Math.round(newFov);
+            document.getElementById('fov-indicator').innerText = `${Math.round(newFov)}°`;
+        }
+
+        // Mascot Flying Dynamics
+        function spawnMascotFlight(startX, startY) {
+            tapComboCount++;
+            const comboBadge = document.getElementById('mascot-combo');
+            const comboCountEl = document.getElementById('mascot-combo-count');
+
+            comboCountEl.innerText = `x${tapComboCount}`;
+            comboBadge.classList.remove('opacity-0', 'scale-75');
+            comboBadge.classList.add('opacity-100', 'scale-105');
+            setTimeout(() => comboBadge.classList.remove('scale-105'), 120);
+
+            clearTimeout(tapComboTimeout);
+            tapComboTimeout = setTimeout(() => {
+                comboBadge.classList.remove('opacity-100');
+                comboBadge.classList.add('opacity-0', 'scale-75');
+                tapComboCount = 0;
+            }, 2600);
+
+            const count = Math.min(4, 1 + Math.floor(tapComboCount / 4));
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    createFloatingMascotElement(startX, startY);
+                }, i * 90);
+            }
+        }
+
+        function createFloatingMascotElement(x, y) {
+            const mascot = document.createElement('img');
+            mascot.src = activeMascotImg;
+            mascot.className = 'flying-mascot w-14 h-14 object-contain rounded-full drop-shadow-[0_6px_14px_rgba(163,230,53,0.55)]';
+
+            const sway1 = (Math.random() - 0.5) * 80 + 'px';
+            const sway2 = (Math.random() - 0.5) * 160 + 'px';
+            const sway3 = (Math.random() - 0.5) * 220 + 'px';
+            const rot1 = (Math.random() - 0.5) * 35 + 'deg';
+            const rot2 = (Math.random() - 0.5) * 50 + 'deg';
+            const rot3 = (Math.random() - 0.5) * 45 + 'deg';
+            const duration = (2.2 + Math.random() * 1.0).toFixed(2) + 's';
+
+            mascot.style.setProperty('--sway1', sway1);
+            mascot.style.setProperty('--sway2', sway2);
+            mascot.style.setProperty('--sway3', sway3);
+            mascot.style.setProperty('--rot1', rot1);
+            mascot.style.setProperty('--rot2', rot2);
+            mascot.style.setProperty('--rot3', rot3);
+            mascot.style.setProperty('--duration', duration);
+
+            mascot.style.left = `${x - 28 + (Math.random() - 0.5) * 30}px`;
+            mascot.style.top = `${y - 45}px`;
+
+            document.body.appendChild(mascot);
+            setTimeout(() => mascot.remove(), 3300);
+        }
+
+        // Tone.js Background Music
+        let isBgmOn = false;
+        let polySynthInstance = null;
+        let toneSynthLoop = null;
+
+        async function toggleBackgroundMusic() {
+            const icon = document.getElementById('bgm-icon');
+            const btn = document.getElementById('bgm-toggle');
+
+            if (!isBgmOn) {
+                await Tone.start();
+                if (!polySynthInstance) {
+                    polySynthInstance = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 1.6, decay: 1.2, sustain: 0.65, release: 2.8 }
+                    }).toDestination();
+                    polySynthInstance.volume.value = -14;
+
+                    const chordsProgression = [
+                        ["C4", "E4", "G4", "B4"],
+                        ["A3", "C4", "E4", "G4"],
+                        ["F3", "A3", "C4", "E4"],
+                        ["G3", "B3", "D4", "F#4"]
+                    ];
+                    let step = 0;
+                    toneSynthLoop = new Tone.Loop((time) => {
+                        polySynthInstance.triggerAttackRelease(chordsProgression[step % chordsProgression.length], "2n", time);
+                        step++;
+                    }, "1m").start(0);
+                }
+                Tone.Transport.start();
+                isBgmOn = true;
+                icon.className = "fa-solid fa-music animate-spin text-cyan-300";
+                btn.classList.add('bg-cyan-500/30', 'border-cyan-400');
+            } else {
+                Tone.Transport.pause();
+                isBgmOn = false;
+                icon.className = "fa-solid fa-volume-xmark";
+                btn.classList.remove('bg-cyan-500/30', 'border-cyan-400');
+            }
+        }
+
+        // Modal Handlers
+        function openModal(mode) {
+            const modal = document.getElementById('cyber-modal');
+            const heading = document.getElementById('modal-heading');
+            const content = document.getElementById('modal-content');
+            const s = campusScenes[currentActiveKey];
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            if (mode === 'info') {
+                heading.innerHTML = `<i class="fa-regular fa-image text-cyan-400"></i> 景點導覽介紹：${s.title}`;
+                content.innerHTML = `
+                    <div class="space-y-3.5">
+                        <div class="rounded-2xl overflow-hidden border border-cyan-500/30 bg-slate-950 aspect-video relative">
+                            <img src="${s.imgPath}" onerror="this.src='${s.backupData}'" class="w-full h-full object-cover" alt="景點預覽">
+                        </div>
+                        <p class="text-slate-200 leading-relaxed text-sm">${s.desc}</p>
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+                            <span>📍 視角方位：Pitch ${s.pitch}° / Yaw ${s.yaw}°</span>
+                            <button onclick="playVoiceGuide('${s.title}。${s.desc}')" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-volume-high"></i> 播放語音導覽
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else if (mode === 'video') {
+                heading.innerHTML = `<i class="fa-solid fa-circle-play text-purple-400"></i> 校園多媒體導覽影片`;
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="aspect-video rounded-2xl overflow-hidden border border-purple-500/40 bg-black">
+                            <iframe class="w-full h-full" src="https://www.youtube.com/embed/tQDkFvS6_jQ" title="校園影片" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                        <p class="text-xs text-slate-400">💡 作業項目要求：多媒體影片模組，展示校園設計、演講與系所活動錄像。</p>
+                    </div>
+                `;
+            } else if (mode === 'live') {
+                heading.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span> 校園即時直播 (LIVE CAM)`;
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="aspect-video rounded-2xl overflow-hidden border border-rose-500/40 bg-slate-950 relative">
+                            <iframe class="w-full h-full" src="https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=1" title="校園即時直播" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                        </div>
+                        <p class="text-xs text-slate-300">📡 直播連線中！右下角可隨時點擊「吉祥物按鈕」進行應援連擊飛翔互動！</p>
+                    </div>
+                `;
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('cyber-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('modal-content').innerHTML = '';
+        }
+
+        function playVoiceGuide(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'zh-TW';
+                u.rate = 1.0;
+                window.speechSynthesis.speak(u);
+            }
+        }
+
+        window.onload = function() {
+            switchPanoramaScene('scene1');
+
+            const autoRotateSwitch = document.getElementById('auto-rotate-switch');
+            const speedSlider = document.getElementById('speed-slider');
+            const speedIndicator = document.getElementById('speed-indicator');
+
+            autoRotateSwitch.addEventListener('change', (e) => {
+                if (!pannellumViewer) return;
+                if (e.target.checked) {
+                    pannellumViewer.startAutoRotate(parseFloat(speedSlider.value));
+                } else {
+                    pannellumViewer.stopAutoRotate();
+                }
+            });
+
+            speedSlider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                speedIndicator.innerText = `${val} °/s`;
+                if (pannellumViewer && autoRotateSwitch.checked) {
+                    pannellumViewer.startAutoRotate(val);
+                }
+            });
+
+            const fovSlider = document.getElementById('fov-slider');
+            const fovIndicator = document.getElementById('fov-indicator');
+            fovSlider.addEventListener('input', (e) => {
+                const fov = parseFloat(e.target.value);
+                fovIndicator.innerText = `${Math.round(fov)}°`;
+                if (pannellumViewer) pannellumViewer.setHfov(fov);
+            });
+
+            const toggleMinimapBtn = document.getElementById('toggle-minimap-btn');
+            const minimapBody = document.getElementById('minimap-body');
+            const minimapIcon = document.getElementById('minimap-toggle-icon');
+            let isMinimapExpanded = true;
+            toggleMinimapBtn.addEventListener('click', () => {
+                isMinimapExpanded = !isMinimapExpanded;
+                minimapBody.style.display = isMinimapExpanded ? 'block' : 'none';
+                minimapIcon.className = isMinimapExpanded ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+            });
+
+            document.getElementById('bgm-toggle').addEventListener('click', toggleBackgroundMusic);
+            document.getElementById('bgm-vol').addEventListener('input', (e) => {
+                if (polySynthInstance) {
+                    const v = parseFloat(e.target.value);
+                    polySynthInstance.volume.value = v === 0 ? -Infinity : -30 + (v * 24);
+                }
+            });
+
+            document.getElementById('mascot-fly-btn').addEventListener('click', (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const originX = rect.left + rect.width / 2;
+                const originY = rect.top + rect.height / 2;
+                spawnMascotFlight(originX, originY);
+            });
+        };
+    </script>
+</body>
+</html>
