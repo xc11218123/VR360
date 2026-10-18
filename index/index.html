@@ -281,10 +281,10 @@
                 <div class="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-cyan-500/5 to-cyan-400/15 animate-pulse"></div>
 
                 <!-- 5 Campus Radar Nodes -->
-                <button onclick="switchPanoramaScene('scene1')" id="radar-scene1" style="top: 24%; left: 83%;" title="1. 校園超市便利店" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-white shadow-[0_0_12px_#22d3ee] hover:scale-125 transition"></button>
+                <button onclick="switchPanoramaScene('scene1')" id="radar-scene1" style="top: 24%; left: 83%;" title="1. 超市便利店" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-cyan-400 border-2 border-white shadow-[0_0_12px_#22d3ee] hover:scale-125 transition"></button>
                 <button onclick="switchPanoramaScene('scene2')" id="radar-scene2" style="top: 78%; left: 54%;" title="2. 視傳系展示大廳" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
                 <button onclick="switchPanoramaScene('scene3')" id="radar-scene3" style="top: 44%; left: 64%;" title="3. D-202 演講廳川堂" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
-                <button onclick="switchPanoramaScene('scene4')" id="radar-scene4" style="top: 42%; left: 39%;" title="4. 教學大樓大廣場" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
+                <button onclick="switchPanoramaScene('scene4')" id="radar-scene4" style="top: 42%; left: 39%;" title="4. 設計大樓大廣場" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
                 <button onclick="switchPanoramaScene('scene5')" id="radar-scene5" style="top: 72%; left: 17%;" title="5. 弧形玻璃天幕迴廊" class="radar-node absolute -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-slate-400 border-2 border-white hover:scale-125 transition"></button>
             </div>
             <div class="mt-1 flex justify-between items-center text-[10px] text-slate-400 px-1">
@@ -319,7 +319,7 @@
         <div class="cyber-glass p-2 rounded-2xl flex items-center space-x-2 overflow-x-auto no-scrollbar shadow-2xl">
             <button onclick="switchPanoramaScene('scene1')" id="tab-scene1" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-cyan-500/30 border border-cyan-400 text-white shadow-[0_0_15px_rgba(6,182,212,0.35)] transition flex items-center space-x-2">
                 <span class="w-5 h-5 rounded-lg bg-cyan-400 text-slate-950 flex items-center justify-center font-black">1</span>
-                <span>校園超市便利店</span>
+                <span>超市便利店</span>
             </button>
             <button onclick="switchPanoramaScene('scene2')" id="tab-scene2" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
                 <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">2</span>
@@ -331,7 +331,7 @@
             </button>
             <button onclick="switchPanoramaScene('scene4')" id="tab-scene4" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
                 <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">4</span>
-                <span>教學大樓廣場</span>
+                <span>設計大樓廣場</span>
             </button>
             <button onclick="switchPanoramaScene('scene5')" id="tab-scene5" class="scene-nav-btn px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap bg-slate-900/60 border border-transparent hover:border-cyan-500/40 text-slate-300 transition flex items-center space-x-2">
                 <span class="w-5 h-5 rounded-lg bg-slate-700 text-slate-200 flex items-center justify-center font-black">5</span>
@@ -402,14 +402,14 @@
         // 3. Exact Mapping to Your Saved Files
         const campusScenes = {
             scene1: {
-                title: "1. 校園超市便利店 (DAIRY)",
+                title: "1. 超市便利店 (DAIRY)",
                 imgPath: "images/scene1.jpg",
                 backupData: generateBackupPanorama('#0f172a', '#78350f', '1. 校園超市便利店'),
                 pitch: -3, yaw: -35,
-                desc: "現代化的校園便利超市，設有亮眼的 DAIRY 鮮乳冷藏專區與各類零食生鮮，為全體師生提供最即時的日常能量補給。",
+                desc: "現代化的便利超市，設有亮眼的 DAIRY 鮮乳冷藏專區與各類零食生鮮，為民眾提供最即時的日常能量補給。",
                 hotSpots: [
                     { pitch: -4, yaw: 135, text: "前往：2. 視傳系展示大廳", sceneId: "scene2" },
-                    { pitch: 4, yaw: -45, text: "📸 檢視【校園超商熱門優惠】", action: "info" }
+                    { pitch: 4, yaw: -45, text: "📸 檢視【超商熱門優惠】", action: "info" }
                 ]
             },
             scene2: {
@@ -420,7 +420,7 @@
                 desc: "具備鮮明亮黃色放射格柵天花板設計，正中央為「視覺傳達設計系」大型作品展示櫥窗，右側設有電梯廳與展覽走廊。",
                 hotSpots: [
                     { pitch: -2, yaw: 55, text: "前往：3. D-202 演講廳川堂", sceneId: "scene3" },
-                    { pitch: -2, yaw: -90, text: "前往：1. 校園超市便利店", sceneId: "scene1" },
+                    { pitch: -2, yaw: -90, text: "前往：1. 超市便利店", sceneId: "scene1" },
                     { pitch: 2, yaw: -10, text: "🎨 欣賞【視傳系櫥窗精選設計】", action: "info" }
                 ]
             },
@@ -431,15 +431,15 @@
                 pitch: 0, yaw: -30,
                 desc: "流線型弧形鋁企口天花板川堂，設有 D-202 演講廳木門與資訊電視看板，向外通往大廣場，向內貫通系所專業教學空間。",
                 hotSpots: [
-                    { pitch: -2, yaw: 120, text: "走出戶外：4. 教學大樓廣場", sceneId: "scene4" },
+                    { pitch: -2, yaw: 120, text: "走出戶外：4. 設計大樓廣場", sceneId: "scene4" },
                     { pitch: -3, yaw: 22, text: "前往：2. 視傳系展示大廳", sceneId: "scene2" },
                     { pitch: 2, yaw: -38, text: "🎬 觀看【演講廳精彩實況影片】", action: "video" }
                 ]
             },
             scene4: {
-                title: "4. 教學大樓紅白磚大廣場",
+                title: "4. 設計大樓紅白磚大廣場",
                 imgPath: "images/scene4.jpg",
-                backupData: generateBackupPanorama('#0369a1', '#b91c1c', '4. 教學大樓紅白磚大廣場'),
+                backupData: generateBackupPanorama('#0369a1', '#b91c1c', '4. 設計大樓紅白磚大廣場'),
                 pitch: 6, yaw: 12,
                 desc: "壯闊的圓弧幾何造型教學大樓與紅白相間的地面拼花地磚，廣場連通行政中心、禮堂與主幹道，是校園活動的熱門地標。",
                 hotSpots: [
@@ -455,7 +455,7 @@
                 pitch: 2, yaw: 0,
                 desc: "採光極佳的挑高弧形玻璃天幕與典雅紅磚柱，遠眺校園廣場與綠意盎然的樹林，是師生課間漫步休憩的絕佳場所。",
                 hotSpots: [
-                    { pitch: -3, yaw: -45, text: "前往：4. 教學大樓廣場", sceneId: "scene4" },
+                    { pitch: -3, yaw: -45, text: "前往：4. 設計大樓廣場", sceneId: "scene4" },
                     { pitch: 15, yaw: 15, text: "📸 查看【天幕迴廊建築特色】", action: "info" }
                 ]
             }
